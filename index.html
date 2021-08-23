@@ -6,6 +6,8 @@
         <title>The Hacking Morpion</title>
         <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Lobster">
         <link rel="stylesheet" type="text/css" href="./style.css" />
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"
+            integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous">
     </head>
     <body>
         <h1 class="title">The Hacking Morpion</h1>
@@ -23,7 +25,17 @@
             <div class="cell" id="C3"></div>
         </section>
         <section class="actions">
-            <a class="replay-button" href="./index.html">Rejouer</a>
+            <a class="replay-button" >Rejouer</a>
+            <div class='undo-redo'>
+               <p class="undo-button " ><i class="fas fa-undo"></i></p>
+               <p class="redo-button " ><i class="fas fa-redo"></i></p>
+            </div>
+            <span class="difficulty">
+                <p class="text">Difficulty :</p>
+                <p class="choise noob"><i class="fas fa-baby"></i>&nbsp;Noob</p>
+                <p class="choise intermediate"><i class="fas fa-khanda"></i>&nbsp;Intermediate</p>
+                <p class="choise killer"><i class="fas fa-skull"></i>&nbsp;Killer</p>
+            </span>
         </section>
         <div class="end-message" id="end-message"></div>
         <script src="./morpion.js"></script>

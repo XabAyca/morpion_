@@ -2,13 +2,16 @@ class Morpion {
 	humanPlayer = 'J1';
 	iaPlayer = 'J2';
     turn = 0;
-	gameOver = false;
+    gameOver = false;
+    difficulty = ''
 
 	gridMap = [
 		[null, null, null],
 		[null, null, null],
 		[null, null, null],
-	];
+    ];
+    gridMapSaved = [];
+    futurGridMap = [];
 
 	constructor(firstPlayer = 'J1') {
 		this.humanPlayer = firstPlayer;
@@ -16,19 +19,102 @@ class Morpion {
 		this.initGame();
 	}
 
-	initGame = () => {
+    initGame = () => {
+        
 		this.gridMap.forEach((line, y) => {
 			line.forEach((cell, x) => {
-				this.getCell(x, y).onclick = () => {
-					this.doPlayHuman(x, y);
+                this.getCell(x, y).onclick = () => {
+                    this.gridMapSaved = [...this.gridMapSaved, JSON.parse(JSON.stringify(this.gridMap))]
+                    this.doPlayHuman(x, y);
 				};
 			});
-		});
+        });
 
+        if (localStorage.getItem('MyGame')) {
+            this.savedGame()
+        } else if (this.difficulty === '') {
+            this.getDifficulty()
+        }
+        
 		if (this.iaPlayer === 'J1') {
 			this.doPlayIa();
-		}
-	}
+        }
+
+        document.querySelector('.replay-button').onclick = (e) => {
+            e.preventDefault();
+            localStorage.removeItem('MyGame');
+            window.location.href = './index.html'
+        }
+        document.querySelector(".undo-button").addEventListener('click',this.undo)
+        document.querySelector(".redo-button").addEventListener('click',this.redo)
+    }
+
+    getDifficulty = () => {
+        document.querySelector('.difficulty').style.display = 'flex';
+
+        let difficulty = ['noob', 'intermediate', 'killer'];
+        difficulty.forEach((el) => {
+            document.querySelector(`.${el}`).onclick = () => {
+                this.difficulty = el;
+                document.querySelector('.difficulty').style.display = 'none'
+            }
+        });
+    }
+
+    savedGame = () => {
+        let game = JSON.parse(localStorage.getItem('MyGame'))   
+        this.difficulty = game.difficulty;
+        this.turn = game.turn;
+        this.gridMap = game.gridMap;
+        this.gridMapSaved = game.gridMapSaved;
+        this.futurGridMap = game.futurGridMap;
+
+        this.gridMap.forEach((line, y) => {
+            line.forEach((cell, x) => {
+                if (this.gridMap[y][x] === this.humanPlayer) {
+                    this.getCell(x, y).classList.add(`filled-${this.humanPlayer}`);
+                } else if (this.gridMap[y][x] === this.iaPlayer) {
+                    this.getCell(x, y).classList.add(`filled-${this.iaPlayer}`);
+                }
+            });
+        });
+    }
+    
+    undo = () => {
+        if (this.gridMapSaved.length>0) {
+            this.futurGridMap = [JSON.parse(JSON.stringify((this.gridMap))), ...this.futurGridMap];
+            this.gridMap = JSON.parse(JSON.stringify(this.gridMapSaved[this.gridMapSaved.length - 1]));
+            this.gridMapSaved = JSON.parse(JSON.stringify(this.gridMapSaved.slice(0, this.gridMapSaved.length - 1)));
+        
+            this.gridMap.forEach((line, y) => {
+                line.forEach((cell, x) => {
+                    if (this.gridMap[y][x] === null) {
+                        this.getCell(x, y).classList.remove(`filled-${this.humanPlayer}`);
+                        this.getCell(x, y).classList.remove(`filled-${this.iaPlayer}`);
+                    }
+                });
+            });
+        }
+    };
+
+    redo = () => {
+        if (this.futurGridMap.length > 0) {
+
+            this.gridMapSaved = [...this.gridMapSaved,JSON.parse(JSON.stringify((this.gridMap)))]
+            this.gridMap = JSON.parse(JSON.stringify(this.futurGridMap[0]));
+            this.futurGridMap = JSON.parse(JSON.stringify(this.futurGridMap.slice(1)));
+
+            this.gridMap.forEach((line, y) => {
+                line.forEach((cell, x) => {
+                    if (this.gridMap[y][x] === this.humanPlayer) {
+                        this.getCell(x, y).classList.add(`filled-${this.humanPlayer}`);
+                    } else if (this.gridMap[y][x] === this.iaPlayer) {
+                        this.getCell(x, y).classList.add(`filled-${this.iaPlayer}`);
+                    }
+                });
+            });
+        };
+    }
 
 	getCell = (x, y) => {
 		const column = x + 1;
@@ -82,6 +168,8 @@ class Morpion {
         }
 
         this.gameOver = true;
+        this.gridMapSaved = []
+        localStorage.removeItem('MyGame');
         switch(winner) {
             case 'tie':
 			    this.displayEndMessage("Vous êtes à égalité !");
@@ -102,13 +190,12 @@ class Morpion {
 	}
 
 	drawHit = (x, y, player) => {
-		if (this.gridMap[y][x] !== null) {
+        if (this.gridMap[y][x] !== null) {
 			return false;
 		}
-
 		this.gridMap[y][x] = player;
         this.turn += 1;
-		this.getCell(x, y).classList.add(`filled-${player}`);
+        this.getCell(x, y).classList.add(`filled-${player}`);
 		this.checkWinner(player);
 		return true;
 	}
@@ -118,19 +205,69 @@ class Morpion {
 			return;
 		}
 
-		if (this.drawHit(x, y, this.humanPlayer)) {
-			this.doPlayIa();
+        if (this.drawHit(x, y, this.humanPlayer)) {
+            this.doPlayIa();
+            this.futurGridMap = []
+            this.saveGame()
 		}
-	}
+    }
+    
+    saveGame = () => {
+        let game = {
+            difficulty: this.difficulty,
+            gridMap: this.gridMap,
+            gridMapSaved: this.gridMapSaved,
+            futurGridMap: this.futurGridMap,
+            turn:this.turn
+        }
+        localStorage.setItem('MyGame',JSON.stringify(game))
+    }
 
 	doPlayIa = () => {
 		if (this.gameOver) {
 			return;
+        }
+        if (this.difficulty == 'noob') {
+            this.easyAi()
+        } else if (this.difficulty === 'intermediate') {
+            this.intermidiateAi()
+        } else if(this.difficulty === 'killer'){   
+         const { x, y } = this.minmax(this.gridMap, 0, -Infinity, Infinity, true);
+            this.drawHit(x, y, this.iaPlayer);
+        };
+    }
+    
+    intermidiateAi = () => {
+        let hasPlayed = false;
+		let cells =[]
+		this.gridMap.forEach((line, y) => {
+			line.forEach((cell, x) => {
+				if(!cell){
+				cells.push([y,x])
+				}
+			});
+		});
+		let randomCell =(cells.sort((a, b) => 0.5 - Math.random()))[0]
+		if (!hasPlayed) {
+			hasPlayed = this.drawHit(randomCell[1], randomCell[0], this.iaPlayer);
 		}
+    }
 
-        const { x, y } = this.minmax(this.gridMap, 0, -Infinity, Infinity, true);
-        this.drawHit(x, y, this.iaPlayer);
-	}
+    easyAi = () => {
+        let hasPlayed = false;
+		let cells =[]
+		this.gridMap.forEach((line, y) => {
+			line.forEach((cell, x) => {
+				if(!cell){
+				cells.push([y,x])
+				}
+			});
+		});
+		let randomCell =(cells.sort((a, b) => 0.5 - Math.random()))[0]
+		if (!hasPlayed) {
+			hasPlayed = this.drawHit(randomCell[1], randomCell[0], this.iaPlayer);
+		}
+    }
 
     minmax = (board, depth, alpha, beta, isMaximizing) => {
         // Return a score when there is a winner
