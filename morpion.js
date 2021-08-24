@@ -1,4 +1,6 @@
-class Morpion {
+import Save from "./save.js";
+export default class Morpion {
+    
 	humanPlayer = 'J1';
 	iaPlayer = 'J2';
     turn = 0;
@@ -15,7 +17,9 @@ class Morpion {
 
 	constructor(firstPlayer = 'J1') {
 		this.humanPlayer = firstPlayer;
-		this.iaPlayer = (firstPlayer === 'J1') ? 'J2' : 'J1';
+        this.iaPlayer = (firstPlayer === 'J1') ? 'J2' : 'J1';
+        this.save = new Save()
+
 		this.initGame();
 	}
 
@@ -62,7 +66,8 @@ class Morpion {
     }
 
     savedGame = () => {
-        let game = JSON.parse(localStorage.getItem('MyGame'))   
+        let game = this.save.getGame()
+        console.log(game);
         this.difficulty = game.difficulty;
         this.turn = game.turn;
         this.gridMap = game.gridMap;
@@ -208,19 +213,15 @@ class Morpion {
         if (this.drawHit(x, y, this.humanPlayer)) {
             this.doPlayIa();
             this.futurGridMap = []
-            this.saveGame()
+            let game = {
+                difficulty: this.difficulty,
+                gridMap: this.gridMap,
+                gridMapSaved: this.gridMapSaved,
+                futurGridMap: this.futurGridMap,
+                turn: this.turn
+            }
+            this.save.save(game)
 		}
-    }
-    
-    saveGame = () => {
-        let game = {
-            difficulty: this.difficulty,
-            gridMap: this.gridMap,
-            gridMapSaved: this.gridMapSaved,
-            futurGridMap: this.futurGridMap,
-            turn:this.turn
-        }
-        localStorage.setItem('MyGame',JSON.stringify(game))
     }
 
 	doPlayIa = () => {
